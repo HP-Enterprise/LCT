@@ -1,0 +1,46 @@
+server.port: 8088 # Server HTTP port.
+
+
+mqtt:
+    clientId: server
+    host: 127.0.0.1
+    port: 1883
+    userName:
+    password:
+    subscribeTopic:
+    publishTopicPrefix:
+
+# Logging level (TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF)
+logging:
+    level:
+        org.hibernate: WARN
+        org.springframework: WARN
+
+# Spring settings
+spring:
+    profiles.active: dev
+    datasource:
+        max-active: 100
+        max-idle: 40
+        min-idle: 35
+        url: jdbc:mysql://127.0.0.1:3306/lct?characterEncoding=utf8
+        username: javapp
+        password:
+    jpa:
+        show-sql: true
+        hibernate:
+            # Hibernate DDL  auto: create, create-drop, update, validate
+            ddl-auto: validate
+            naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
+            properties:
+                hibernate.dialect: org.hibernate.dialect.MySQL5Dialect
+    redis:
+        host: 127.0.0.1
+        port: 6379
+        password:
+        database: 0
+        pool:
+            max-idle: 8
+            min-idle: 0
+            max-active: 8
+            max-wait: -1
