@@ -1,9 +1,11 @@
 package com.hp.lct.mqtt;
 
+import com.hp.lct.service.MsgHandler;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +32,9 @@ public class MsgServer {
     @Value("${mqtt.password}")
     private  String password;
 
+    @Autowired
+    private MsgHandler msgHandler;
+
     private static MqttClient client ;
     private static MemoryPersistence persistence;
     private Logger _logger = LoggerFactory.getLogger(MsgServer.class);
@@ -49,8 +54,8 @@ public class MsgServer {
                 public void messageArrived(String s, MqttMessage message) throws Exception {
                     try {
                         String msg= message.toString();
-                        _logger.info(s + "从服务器收到的消息为:" + message.toString());
-                        replay("testtest","receive msg:"+msg);
+                     //   replay("testtest","receive msg:"+msg);
+                        msgHandler.handleReq(client,msg);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -79,17 +84,4 @@ public class MsgServer {
         return "success";
     }
 
-
-
-    public  void replay(String topic,String meaasge){
-        try {
-            MqttTopic _replayTopic = client.getTopic(topic);
-            System.out.println("发送的消息内容为:" + meaasge);
-            MqttMessage message = new MqttMessage(meaasge.getBytes());
-            message.setQos(0);
-            MqttDeliveryToken token = _replayTopic.publish(message);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
