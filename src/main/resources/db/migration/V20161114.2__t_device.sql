@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS t_device(
-    id INT NOT NULL AUTO_INCREMENT COMMENT 'ID',
+    id bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     model  VARCHAR(50) COMMENT '设备型号',
     odm_model VARCHAR(50) COMMENT '品牌型号',
     imei VARCHAR(50) COMMENT 'IMEI号',

@@ -1,5 +1,7 @@
 package com.hp.lct.entity;
 
+import java.util.List;
+
 /**
  * Created by jackl on 2016/11/14.
  */
@@ -31,6 +33,8 @@ public class Body {
     private String sleepTime;
 
     private String collisionTime;
+
+    private List<App> apps;
 
     public String getImei() {
         return imei;
@@ -224,6 +228,14 @@ public class Body {
         this.result = result;
     }
 
+    public List<App> getApps() {
+        return apps;
+    }
+
+    public void setApps(List<App> apps) {
+        this.apps = apps;
+    }
+
     class Param{
         private String dest;
         private String time;
@@ -244,5 +256,7 @@ public class Body {
             this.time = time;
         }
     }
+
+
 
 }

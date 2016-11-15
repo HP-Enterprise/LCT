@@ -1,7 +1,8 @@
 package com.hp.lct.service;
-import com.hp.lct.entity.Body;
-import com.hp.lct.entity.Head;
-import com.hp.lct.entity.MsgBean;
+import com.hp.lct.entity.*;
+import com.hp.lct.repository.AppVersionRepository;
+import com.hp.lct.repository.DeviceRepository;
+import com.hp.lct.repository.DeviceStatusDataRepository;
 import com.hp.lct.utils.DataTool;
 import com.hp.lct.utils.RedisTool;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -14,6 +15,11 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.alibaba.fastjson.JSON;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 /**
  * Created by jackl on 2016/11/11.
  */
@@ -29,12 +35,19 @@ public class MsgHandler {
     private RedisTool redisTool;
     @Autowired
     private DataTool dataTool;
+    @Autowired
+    DeviceRepository deviceRepository;
+    @Autowired
+    DeviceStatusDataRepository deviceStatusDataRepository;
+    @Autowired
+    AppVersionRepository appVersionRepository;
+
 
 
     private Logger _logger = LoggerFactory.getLogger(MsgHandler.class);
 
     public String handleReq (MqttClient client,String msg){
-        _logger.info("receive msg:"+msg);
+        _logger.info("收到的消息:" +msg);
         String replayMsg=null;
         MsgBean bean =null;
         try {
@@ -63,10 +76,44 @@ public class MsgHandler {
                     redisTool.deleteHashString(dataTool.onlineDeviceHash, imei);
                     replayMsg=buildResp(version,id,subscribeTopic,code,2,"OK",null);
                     break;
+
+                case 6:
+                    //设备查询APP升级信息
+                    List<App> reqApps=bean.getBody().getApps();
+                    List<App> respApps=new ArrayList<App>();
+                    for (int i = 0; i <reqApps.size(); i++) {
+                        App app=reqApps.get(i);
+                        AppVersion appVersion= appVersionRepository.findTopByAppIdAndVersionGreaterThanOrderByPublishTimeDesc(app.getAppId(), app.getVersion());
+                        if(appVersion!=null) {
+                            App _app = new App(appVersion.getAppId(),appVersion.getVersion(),appVersion.getUrl(),appVersion.getAppSize(),appVersion.getMd5(),appVersion.getAppDesc());
+                            respApps.add(_app);
+                        }
+                    }
+                    Body body=new Body();
+                    body.setApps(respApps);
+                    replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", body);
+                    break;
                 case 100://获取上报
                 case 101://主动上报
                     //设备信息上报
-
+                    imei=bean.getBody().getImei();
+                    Device device=deviceRepository.findByImei(imei);
+                    if(device==null){
+                        device=new Device();
+                    }
+                    device.setImei(bean.getBody().getImei());
+                    device.setImsi(bean.getBody().getImsi());
+                    device.setModel(bean.getBody().getModel());
+                    device.setOdmModel(bean.getBody().getOdmModel());
+                    device.setHwVer(bean.getBody().getHwver());
+                    device.setSwVer(bean.getBody().getSwver());
+                    device.setOdmSwVer(bean.getBody().getOdmSwver());
+                    device.setWifiMac(bean.getBody().getWifimac());
+                    device.setBtMac(bean.getBody().getBtmac());
+                    device.setBrandName(bean.getBody().getBrandName());
+                    device.setVendor(bean.getBody().getVendor());
+                    device.setReceiveTime(new Date());
+                    deviceRepository.save(device);
                     if(code==101) {
                         replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
                     }
@@ -76,17 +123,57 @@ public class MsgHandler {
                 case 103://主动上报
                     //状态信息上报
                     imei=bean.getBody().getImei();
-                    double longitude=bean.getBody().getLongitude();
-                    double latitude=bean.getBody().getLatitude();
-                    System.out.println(">>"+imei+"-"+longitude+"-"+latitude);
+                    DeviceStatusData deviceStatusData=new DeviceStatusData();
+                    deviceStatusData.setSequenceId(String.valueOf(bean.getHead().getId()));
+                    deviceStatusData.setImei(imei);
+                    deviceStatusData.setType((short) 1);
+                    deviceStatusData.setLatitude(bean.getBody().getLatitude());
+                    deviceStatusData.setLongitude(bean.getBody().getLongitude());
+                    deviceStatusData.setReceiveTime(new Date());
+                    deviceStatusDataRepository.save(deviceStatusData);
                     if(code==103) {
                         replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
                     }
                     break;
+                case 106://控制
+                    imei=bean.getBody().getImei();
+                    String sequenceId=String.valueOf(bean.getHead().getId());
+                    String result=bean.getBody().getResult();
+                    if(result!=null){
+                        if(result.equals("OK")){
+                            //更新控制记录
+                            System.out.println("控制结果>>>>>"+imei+"-"+sequenceId+"-"+result);
+                        }
+                    }
+                    break;
+                case 107://碰撞上报
+                case 108://移动上报
+                    imei=bean.getBody().getImei();
+                    deviceStatusData=new DeviceStatusData();
+                    deviceStatusData.setSequenceId(String.valueOf(bean.getHead().getId()));
+                    deviceStatusData.setImei(imei);
+                    if(code==107) {
+                        deviceStatusData.setType((short) 2);
+                        deviceStatusData.setActionTime(dataTool.parseStrToDate(bean.getBody().getCollisionTime()));
+                    }else{
+                        deviceStatusData.setType((short) 3);
+                        deviceStatusData.setActionTime(dataTool.parseStrToDate(bean.getBody().getMoveTime()));
+                    }
 
+                    deviceStatusData.setLatitude(bean.getBody().getLatitude());
+                    deviceStatusData.setLongitude(bean.getBody().getLongitude());
+                    deviceStatusData.setReceiveTime(new Date());
+                    deviceStatusDataRepository.save(deviceStatusData);
+                    replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
+                    break;
+                case 109://休眠请求
+                    imei=bean.getBody().getImei();
+                    String sleepTime =bean.getBody().getSleepTime();
+                    _logger.info("设备"+imei+"休眠,休眠时间"+sleepTime);
+                    break;
             }
             //回复消息
-            String replayTopic=publishTopicPrefix+"/"+bean.getBody().getImei();
+            String replayTopic=bean.getHead().getFrom();
             if(replayMsg!=null) {
                 replay(client, replayTopic, replayMsg);
             }
