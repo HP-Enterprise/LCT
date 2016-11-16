@@ -3,6 +3,7 @@ import com.hp.lct.entity.*;
 import com.hp.lct.repository.AppVersionRepository;
 import com.hp.lct.repository.DeviceRepository;
 import com.hp.lct.repository.DeviceStatusDataRepository;
+import com.hp.lct.repository.RemoteControlRepository;
 import com.hp.lct.utils.DataTool;
 import com.hp.lct.utils.RedisTool;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -41,6 +42,8 @@ public class MsgHandler {
     DeviceStatusDataRepository deviceStatusDataRepository;
     @Autowired
     AppVersionRepository appVersionRepository;
+    @Autowired
+    RemoteControlRepository remoteControlRepository;
 
 
 
@@ -93,8 +96,8 @@ public class MsgHandler {
                     body.setApps(respApps);
                     replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", body);
                     break;
-                case 100://获取上报
-                case 101://主动上报
+                case 100://主动上报
+                case 101://获取上报
                     //设备信息上报
                     imei=bean.getBody().getImei();
                     Device device=deviceRepository.findByImei(imei);
@@ -114,13 +117,26 @@ public class MsgHandler {
                     device.setVendor(bean.getBody().getVendor());
                     device.setReceiveTime(new Date());
                     deviceRepository.save(device);
-                    if(code==101) {
+                    if(code==100) {
                         replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
+                    }else{
+                        //获取，更新记录
+                        //更新控制记录
+                        RemoteControl remoteControl=remoteControlRepository.findBySequenceId(String.valueOf(bean.getHead().getId()));
+                        if(remoteControl!=null){
+                            remoteControl.setStatus((short)1);
+                            remoteControl.setRemark("设备执行操作成功");
+                            remoteControl.setReceiveTime(new Date());
+                            remoteControlRepository.save(remoteControl);
+                            _logger.info("更新远程控制状态. sequenceId>"+remoteControl.getSequenceId());
+                        }else{
+                            _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+remoteControl.getSequenceId());
+                        }
                     }
                     break;
 
-                case 102://获取上报
-                case 103://主动上报
+                case 102://主动上报
+                case 103://获取上报
                     //状态信息上报
                     imei=bean.getBody().getImei();
                     DeviceStatusData deviceStatusData=new DeviceStatusData();
@@ -131,8 +147,21 @@ public class MsgHandler {
                     deviceStatusData.setLongitude(bean.getBody().getLongitude());
                     deviceStatusData.setReceiveTime(new Date());
                     deviceStatusDataRepository.save(deviceStatusData);
-                    if(code==103) {
+                    if(code==102) {
                         replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
+                    }else{
+                        //获取，更新记录
+                        //更新控制记录
+                        RemoteControl remoteControl=remoteControlRepository.findBySequenceId(String.valueOf(bean.getHead().getId()));
+                        if(remoteControl!=null){
+                            remoteControl.setStatus((short)1);
+                            remoteControl.setRemark("设备执行操作成功");
+                            remoteControl.setReceiveTime(new Date());
+                            remoteControlRepository.save(remoteControl);
+                            _logger.info("更新远程控制状态. sequenceId>"+remoteControl.getSequenceId());
+                        }else{
+                            _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+remoteControl.getSequenceId());
+                        }
                     }
                     break;
                 case 106://控制
@@ -142,7 +171,17 @@ public class MsgHandler {
                     if(result!=null){
                         if(result.equals("OK")){
                             //更新控制记录
-                            System.out.println("控制结果>>>>>"+imei+"-"+sequenceId+"-"+result);
+                            RemoteControl remoteControl=remoteControlRepository.findBySequenceId(sequenceId);
+                            if(remoteControl!=null){
+                                remoteControl.setStatus((short)1);
+                                remoteControl.setRemark("设备执行操作成功");
+                                remoteControl.setReceiveTime(new Date());
+                                remoteControlRepository.save(remoteControl);
+                                _logger.info("更新远程控制状态. sequenceId>"+sequenceId+",result>"+result);
+                            }else{
+                                _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+sequenceId);
+                            }
+
                         }
                     }
                     break;

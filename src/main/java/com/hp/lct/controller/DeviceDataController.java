@@ -23,7 +23,7 @@ public class DeviceDataController {
     @RequestMapping(value = "/service/model/{model}/device/{imei}/remoteControl",method = RequestMethod.POST)
     public Object sentRemoteSettingToVehicle(@PathVariable("model") String model,@PathVariable("imei") String imei,@RequestBody RemoteControlBody remoteControlBody,HttpServletRequest request){
         RequestContext requestContext = new RequestContext(request);
-        Object result=deviceDataService.handleRemnoteControl(remoteControlBody);
+        Object result=deviceDataService.handleRemoteControl(remoteControlBody);
         return result;
     }
 }

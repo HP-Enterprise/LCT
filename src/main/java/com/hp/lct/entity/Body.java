@@ -27,7 +27,7 @@ public class Body {
 
     private String operation;//PHOTO,VIDEO,NAVIGATE
     private String operate;
-    private Param param;
+    private CommandParam param;
     private String result;
     private String moveTime;
     private String sleepTime;
@@ -188,13 +188,7 @@ public class Body {
         this.operate = operate;
     }
 
-    public Param getParam() {
-        return param;
-    }
 
-    public void setParam(Param param) {
-        this.param = param;
-    }
 
     public String getMoveTime() {
         return moveTime;
@@ -236,27 +230,11 @@ public class Body {
         this.apps = apps;
     }
 
-    class Param{
-        private String dest;
-        private String time;
-
-        public String getDest() {
-            return dest;
-        }
-
-        public void setDest(String dest) {
-            this.dest = dest;
-        }
-
-        public String getTime() {
-            return time;
-        }
-
-        public void setTime(String time) {
-            this.time = time;
-        }
+    public CommandParam getParam() {
+        return param;
     }
 
-
-
+    public void setParam(CommandParam param) {
+        this.param = param;
+    }
 }

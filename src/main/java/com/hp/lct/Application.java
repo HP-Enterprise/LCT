@@ -57,6 +57,7 @@ public class Application implements CommandLineRunner {
     public void run(String... args) throws Exception{
         this._logger = LoggerFactory.getLogger(Application.class);
         this._logger.info("Application is running...");
+        redisTool.deleteHashAllString(dataTool.onlineDeviceHash);//清理redis里面的全部连接记录
         dataHandlerScheduledService.schedule(new MsgServerTask(host,port,subscribeTopic,publishTopicPrefix,clientId,username,password,msgHandler,redisTool,dataTool),10, TimeUnit.MILLISECONDS);
     }
 }

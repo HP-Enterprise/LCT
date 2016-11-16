@@ -1,5 +1,10 @@
 package com.hp.lct.mqtt;
 
+import com.alibaba.fastjson.JSON;
+import com.hp.lct.entity.Body;
+import com.hp.lct.entity.CommandParam;
+import com.hp.lct.entity.Head;
+import com.hp.lct.entity.MsgBean;
 import com.hp.lct.service.MsgHandler;
 import com.hp.lct.utils.DataTool;
 import com.hp.lct.utils.RedisTool;
@@ -10,6 +15,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by jackl on 2016/11/11.
@@ -25,6 +34,7 @@ public class MsgServerTask implements Runnable{
     private  String password;
     private MsgHandler msgHandler;
     private RedisTool redisTool;
+    private DataTool dataTool;
 
     private  String hostName;
     private static MqttClient client ;
@@ -44,12 +54,13 @@ public class MsgServerTask implements Runnable{
         this.password = password;
         this.msgHandler = msgHandler;
         this.redisTool = redisTool;
+        this.dataTool=dataTool;
     }
 
     @Override
     public void run() {
         subscribe();
-        testSend();
+        loadCommand();
     }
     public  String subscribe() {
         try {
@@ -97,15 +108,75 @@ public class MsgServerTask implements Runnable{
         return "success";
     }
 
-    public void testSend(){
-        replay(client,"/d/lv8918/868516020035370","测试发送");
+    public void loadCommand(){
+        while (true){
+            try{
+                Thread.sleep(10);//开发调试用
+            }catch (InterruptedException e){e.printStackTrace(); }
+            //读取数据库中所有的命令集合
+            Set<String> setKey = redisTool.getKeysSet(dataTool.outCmdPreStr+"*");//read output:*
+            if(setKey.size()>0){
+                //_logger.info( setKey.size()+" message wait to be handle ");
+            }
+            Iterator keys = setKey.iterator();
+            while (keys.hasNext()){
+                //遍历待发数据,处理
+                String k=(String)keys.next();
+                handleCommand(k);
+            }
+        }
     }
 
-    public  void replay(MqttClient client,String topic,String meaasge){
+    public void handleCommand(String key){
+        //key>output:tricheer:868516020035370:106:1479264439091|msg>NAVIGATE,114.360734, 30.541093
+        String msg =redisTool.popSetOneString(key);
+        _logger.info("读取到控制指令key>" + key + "|msg>" + msg);
+        String[] ss=key.split(":");
+        String imei=ss[2];
+        String command=ss[3];
+        String sequenceId=ss[4];
+
+        Body body=null;
+        String replayMsg=null;
+        if(command.equals("101")){
+            replayMsg=buildResp(1,Long.parseLong(sequenceId),subscribeTopic,101,1,"",null);
+        }else  if(command.equals("103")){
+            replayMsg=buildResp(1,Long.parseLong(sequenceId),subscribeTopic,103,1,"",null);
+        }else  if(command.equals("106")){
+            String[] vals=msg.split(",");
+            body=new Body();
+            body.setOperate(vals[0]);
+            CommandParam commandParam=new CommandParam();
+            if(vals[0].equals("VIDEO")){
+                commandParam.setTime(vals[1]);
+            }else  if(vals[0].equals("NAVIGATE")){
+                commandParam.setDest(vals[1]+","+vals[2]);
+            }
+            body.setParam(commandParam);
+            replayMsg=buildResp(1,Long.parseLong(sequenceId),subscribeTopic,106,1,"",body);
+        }
+        String replayTopic=publishTopicPrefix+"/"+imei;
+        if(replayMsg!=null) {
+            replay(client, replayTopic, replayMsg);
+        }
+    }
+
+    public String buildResp(int version,long id, String from,int code, int type, String msg,Body body){
+        String replayStr=null;
+        Head head=new Head(version,id,from,code,type,msg);
+
+        MsgBean msgBean=new MsgBean(head,body);
+        try {
+            replayStr = JSON.toJSONString(msgBean);
+        }catch (Exception e){e.printStackTrace();}
+        return replayStr;
+    }
+
+    public  void replay(MqttClient client,String topic,String msg){
         try {
             MqttTopic _replayTopic = client.getTopic(topic);
-            _logger.info("发出的消息:" + meaasge);
-            MqttMessage message = new MqttMessage(meaasge.getBytes());
+            _logger.info("发往"+topic+"的消息:" + msg);
+            MqttMessage message = new MqttMessage(msg.getBytes());
             message.setQos(0);
             MqttDeliveryToken token = _replayTopic.publish(message);
         } catch (Exception e) {
