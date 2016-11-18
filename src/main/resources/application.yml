@@ -10,6 +10,9 @@ mqtt:
     subscribeTopic:
     publishTopicPrefix:
 
+
+upload.path: upload
+
 # Logging level (TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF)
 logging:
     level:

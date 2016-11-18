@@ -15,13 +15,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.embedded.MultipartConfigFactory;
+import org.springframework.context.annotation.Bean;
 
+import javax.servlet.MultipartConfigElement;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 public class Application implements CommandLineRunner {
+    @Bean
+    public MultipartConfigElement multipartConfigElement() {
+        MultipartConfigFactory factory = new MultipartConfigFactory();
+        factory.setMaxFileSize("20MB");
+        factory.setMaxRequestSize("20MB");
+        //还需要在数据库上配置支持的max_allowed_packet
+        return factory.createMultipartConfig();
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
@@ -57,7 +69,7 @@ public class Application implements CommandLineRunner {
     public void run(String... args) throws Exception{
         this._logger = LoggerFactory.getLogger(Application.class);
         this._logger.info("Application is running...");
-        redisTool.deleteHashAllString(dataTool.onlineDeviceHash);//清理redis里面的全部连接记录
+        //redisTool.deleteHashAllString(dataTool.onlineDeviceHash);//清理redis里面的全部连接记录
         dataHandlerScheduledService.schedule(new MsgServerTask(host,port,subscribeTopic,publishTopicPrefix,clientId,username,password,msgHandler,redisTool,dataTool),10, TimeUnit.MILLISECONDS);
     }
 }

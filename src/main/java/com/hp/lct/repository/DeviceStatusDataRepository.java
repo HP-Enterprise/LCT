@@ -10,4 +10,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface DeviceStatusDataRepository extends CrudRepository<DeviceStatusData,Long> {
+
+    DeviceStatusData findTopByImeiOrderByReceiveTimeDesc(String imei);
+
 }

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html {width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+        #allmap{width:100%;height:600px;}
+        p{margin-left:5px; font-size:14px;}
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=hZSj3ImvmHUOpIGPTKZr5NPftcYNpKW1"></script>
+    <script src="/js/jquery-3.1.1.min.js"></script>
+    <title>在线设备分布</title>
+</head>
+<body>
+<label id="label1">当前在线设备:</label><label id="count"></label>&nbsp;&nbsp;<label id="time"></label>
+<div id="allmap"></div>
+<!--<button>请求数据</button>-->
+</body>
+</html>
+<script type="text/javascript">
+    map = new BMap.Map("allmap");
+    map.centerAndZoom(new BMap.Point(114.417854,30.921988), 6);
+    map.enableScrollWheelZoom();
+    map.setMapStyle({style:'midnight'});
+    var opts = {
+        width : 250,     // 信息窗口宽度
+        height: 80,     // 信息窗口高度
+        title : "设备详情" , // 信息窗口标题
+        enableMessage:true//设置允许信息窗发送短息
+    };
+    function addClickHandler(content,marker){
+        marker.addEventListener("click",function(e){
+                    openInfo(content,e)}
+        );
+    }
+    function openInfo(content,e){
+        var p = e.target;
+        var point = new BMap.Point(p.getPosition().lng, p.getPosition().lat);
+        var infoWindow = new BMap.InfoWindow(content,opts);  // 创建信息窗口对象
+        map.openInfoWindow(infoWindow,point); //开启信息窗口
+    }
+    function formatDate(time) {
+        var date = time?time:new Date();
+        var hour = date.getHours();
+        hour = (hour < 10 ? "0" : "") + hour;
+        var min = date.getMinutes();
+        min = (min < 10 ? "0" : "") + min;
+        var sec = date.getSeconds();
+        sec = (sec < 10 ? "0" : "") + sec;
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        month = (month < 10 ? "0" : "") + month;
+        var day = date.getDate();
+        day = (day < 10 ? "0" : "") + day;
+        return year + "-" + month + "-" + day + " " + hour + ":" + min + ":" + sec;
+    }
+
+    function refreshData(){
+        $.get("/api/service/device/online",function(data,status){
+            if(status=='success'){
+                if(data.status=='0'){
+                    var msgs=data.msg;
+                    var data_info=new Array();
+                    var time=formatDate(new Date(),"yyyy-MM-dd hh:mm:ss");
+                    $("#count").text(msgs.length);
+                    $("#time").text("更新时间:"+time);
+                    map.clearOverlays()
+                    for(var i= 0;i<msgs.length;i++){
+                        var p = new Array()
+                        p[0] = msgs[i].longitude;
+                        p[1] = msgs[i].latitude;
+                        p[2] = "imei:"+msgs[i].imei+"<br>接收时间:"+formatDate(new Date(msgs[i].receiveTime));
+                        data_info.push(p);
+                    }
+                    for(var i=0;i<data_info.length;i++){
+                        var marker = new BMap.Marker(new BMap.Point(data_info[i][0],data_info[i][1]));  // 创建标注
+                        var content = data_info[i][2];
+                        map.addOverlay(marker);               // 将标注添加到地图中
+                        addClickHandler(content,marker);
+                    }
+
+                    //
+                }
+            }
+
+        });
+    }
+
+    $(document).ready(function(){
+        // 百度地图API功能
+        refreshData();
+    });
+    var t1 = window.setInterval(refreshData,10000);
+
+
+</script>

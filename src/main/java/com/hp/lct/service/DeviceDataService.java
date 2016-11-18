@@ -1,18 +1,25 @@
-package com.hp.lct;
+package com.hp.lct.service;
 
 import com.alibaba.fastjson.JSON;
-import com.hp.lct.entity.ObjectResult;
-import com.hp.lct.entity.RemoteControl;
-import com.hp.lct.entity.RemoteControlBody;
+import com.hp.lct.entity.*;
+import com.hp.lct.repository.DeviceRepository;
+import com.hp.lct.repository.DeviceStatusDataRepository;
 import com.hp.lct.repository.RemoteControlRepository;
 import com.hp.lct.utils.DataTool;
 import com.hp.lct.utils.RedisTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by jackl on 2016/11/15.
@@ -26,6 +33,12 @@ public class DeviceDataService {
     private DataTool dataTool;
     @Autowired
     private RemoteControlRepository remoteControlRepository;
+    @Autowired
+    private DeviceRepository deviceRepository;
+    @Autowired
+    private DeviceStatusDataRepository deviceStatusDataRepository;
+    @Value("${upload.path}")
+    private  String uploadPath;
 
     private Logger _logger = LoggerFactory.getLogger(DeviceDataService.class);
 
@@ -47,13 +60,13 @@ public class DeviceDataService {
                 remoteControlRepository.save(remoteControl);
 
                 _logger.info("设备"+remoteControlBody.getImei()+"不在线,无法继续。");
-                re=new ObjectResult(false,"设备不在线");
+                re=new ObjectResult(1,"设备不在线");
             } else {
                 sendCommand(remoteControlBody);
-                re=new ObjectResult(true,"命令已经下发");
+                re=new ObjectResult(0,"命令已经下发");
             }
         }else{
-            re=new ObjectResult(false,"参数无效");
+            re=new ObjectResult(1,"参数无效");
         }
 
         return re ;
@@ -111,5 +124,97 @@ public class DeviceDataService {
 
 
     }
+
+    /**
+     * 获取在线的设备
+     * @return
+     */
+    public List<DeviceStatusData> getOnlineDevices(){
+        List<DeviceStatusData> devices=new ArrayList<>();
+        Set<String> onlineImeis=redisTool.listHashKeys(dataTool.onlineDeviceHash);
+        for (String imei:onlineImeis){
+            DeviceStatusData device=deviceStatusDataRepository.findTopByImeiOrderByReceiveTimeDesc(imei);
+            if(device!=null){
+                devices.add(device);
+            }
+        }
+        return devices;
+    }
+
+    /**
+     * 处理文件上传
+     * @param imei
+     * @param fileName
+     * @param file
+     * @param basePath
+     * @return
+     */
+    public boolean handUploadFile(String imei,String fileName,MultipartFile file,String basePath){
+        boolean result=false;
+        String originalFilename=fileName;//file.getOriginalFilename();
+        if(originalFilename.lastIndexOf("\\")>0){
+            originalFilename=originalFilename.substring(originalFilename.lastIndexOf("\\"));
+        }
+        String devicePath=uploadPath+imei;
+        File base =new File(uploadPath);
+        File deviceDir =new File(devicePath);
+        if(!base.exists()){
+            base .mkdir();
+        }
+        if(!deviceDir.exists()){
+            deviceDir .mkdir();
+        }
+        File savefile =new File(devicePath+File.separator+originalFilename);
+        try{
+            file.transferTo(savefile);
+            result=true;
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+        System.out.println(imei+"上传文件"+file.getOriginalFilename()+">"+file.getSize()+"将要保存的路径"+savefile.getAbsolutePath());
+        return result;
+
+    }
+
+
+    /**
+     * 列出制定后缀的文件
+     * @param imei
+     * @param suffix
+     * @return
+     */
+    public List<String> listFile(String imei,String suffix){
+        String devicePath=uploadPath+imei;
+        List<String> result=new ArrayList<>();
+        File deviceDir =new File(devicePath);
+        if(deviceDir.exists()){
+            String[] files=deviceDir.list();
+            for(int i=0;i<files.length;i++){
+                String _f=files[i];
+                if(_f.endsWith(suffix.toLowerCase())||_f.endsWith(suffix.toUpperCase())){
+                    result.add(_f);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 下载指定文件
+     * @param imei
+     * @return
+     */
+    public File downFile(String imei,String fileName){
+        String devicePath=uploadPath+imei;
+        List<String> result=new ArrayList<>();
+        File deviceDir =new File(devicePath);
+        File targetFile=new File(deviceDir+File.separator+fileName);
+        if(targetFile.exists()){
+           return targetFile;
+        }else{
+            return null;
+        }
+    }
+
 
 }
