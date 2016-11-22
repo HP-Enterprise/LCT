@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS t_device_status_data(
+CREATE TABLE IF NOT EXISTS t_lct_status_data(
 id bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
 sequence_id varchar(20)  NOT NULL COMMENT '序号',
 type smallint(1)  NOT NULL COMMENT '数据类型 1状态信息 2碰撞事件 3 移动事件',

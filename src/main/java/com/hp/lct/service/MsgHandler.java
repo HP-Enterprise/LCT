@@ -1,9 +1,9 @@
 package com.hp.lct.service;
 import com.hp.lct.entity.*;
-import com.hp.lct.repository.AppVersionRepository;
-import com.hp.lct.repository.DeviceRepository;
-import com.hp.lct.repository.DeviceStatusDataRepository;
-import com.hp.lct.repository.RemoteControlRepository;
+import com.hp.lct.repository.LctAppVersionRepository;
+import com.hp.lct.repository.LctRepository;
+import com.hp.lct.repository.LctStatusDataRepository;
+import com.hp.lct.repository.LctRemoteControlRepository;
 import com.hp.lct.utils.DataTool;
 import com.hp.lct.utils.RedisTool;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -37,13 +37,13 @@ public class MsgHandler {
     @Autowired
     private DataTool dataTool;
     @Autowired
-    DeviceRepository deviceRepository;
+    LctRepository lctRepository;
     @Autowired
-    DeviceStatusDataRepository deviceStatusDataRepository;
+    LctStatusDataRepository lctStatusDataRepository;
     @Autowired
-    AppVersionRepository appVersionRepository;
+    LctAppVersionRepository lctAppVersionRepository;
     @Autowired
-    RemoteControlRepository remoteControlRepository;
+    LctRemoteControlRepository lctRemoteControlRepository;
 
 
 
@@ -86,9 +86,9 @@ public class MsgHandler {
                     List<App> respApps=new ArrayList<App>();
                     for (int i = 0; i <reqApps.size(); i++) {
                         App app=reqApps.get(i);
-                        AppVersion appVersion= appVersionRepository.findTopByAppIdAndVersionGreaterThanOrderByPublishTimeDesc(app.getAppId(), app.getVersion());
-                        if(appVersion!=null) {
-                            App _app = new App(appVersion.getAppId(),appVersion.getVersion(),appVersion.getUrl(),appVersion.getAppSize(),appVersion.getMd5(),appVersion.getAppDesc());
+                        LctAppVersion lctAppVersion = lctAppVersionRepository.findTopByAppIdAndVersionGreaterThanOrderByPublishTimeDesc(app.getAppId(), app.getVersion());
+                        if(lctAppVersion !=null) {
+                            App _app = new App(lctAppVersion.getAppId(), lctAppVersion.getVersion(), lctAppVersion.getUrl(), lctAppVersion.getAppSize(), lctAppVersion.getMd5(), lctAppVersion.getAppDesc());
                             respApps.add(_app);
                         }
                     }
@@ -100,37 +100,37 @@ public class MsgHandler {
                 case 101://获取上报
                     //设备信息上报
                     imei=bean.getBody().getImei();
-                    Device device=deviceRepository.findByImei(imei);
-                    if(device==null){
-                        device=new Device();
+                    Lct lct = lctRepository.findByImei(imei);
+                    if(lct ==null){
+                        lct =new Lct();
                     }
-                    device.setImei(bean.getBody().getImei());
-                    device.setImsi(bean.getBody().getImsi());
-                    device.setModel(bean.getBody().getModel());
-                    device.setOdmModel(bean.getBody().getOdmModel());
-                    device.setHwVer(bean.getBody().getHwver());
-                    device.setSwVer(bean.getBody().getSwver());
-                    device.setOdmSwVer(bean.getBody().getOdmSwver());
-                    device.setWifiMac(bean.getBody().getWifimac());
-                    device.setBtMac(bean.getBody().getBtmac());
-                    device.setBrandName(bean.getBody().getBrandName());
-                    device.setVendor(bean.getBody().getVendor());
-                    device.setReceiveTime(new Date());
-                    deviceRepository.save(device);
+                    lct.setImei(bean.getBody().getImei());
+                    lct.setImsi(bean.getBody().getImsi());
+                    lct.setModel(bean.getBody().getModel());
+                    lct.setOdmModel(bean.getBody().getOdmModel());
+                    lct.setHwVer(bean.getBody().getHwver());
+                    lct.setSwVer(bean.getBody().getSwver());
+                    lct.setOdmSwVer(bean.getBody().getOdmSwver());
+                    lct.setWifiMac(bean.getBody().getWifimac());
+                    lct.setBtMac(bean.getBody().getBtmac());
+                    lct.setBrandName(bean.getBody().getBrandName());
+                    lct.setVendor(bean.getBody().getVendor());
+                    lct.setReceiveTime(new Date());
+                    lctRepository.save(lct);
                     if(code==100) {
                         replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
                     }else{
                         //获取，更新记录
                         //更新控制记录
-                        RemoteControl remoteControl=remoteControlRepository.findBySequenceId(String.valueOf(bean.getHead().getId()));
-                        if(remoteControl!=null){
-                            remoteControl.setStatus((short)1);
-                            remoteControl.setRemark("设备执行操作成功");
-                            remoteControl.setReceiveTime(new Date());
-                            remoteControlRepository.save(remoteControl);
-                            _logger.info("更新远程控制状态. sequenceId>"+remoteControl.getSequenceId());
+                        LctRemoteControl lctRemoteControl = lctRemoteControlRepository.findBySequenceId(String.valueOf(bean.getHead().getId()));
+                        if(lctRemoteControl !=null){
+                            lctRemoteControl.setStatus((short)1);
+                            lctRemoteControl.setRemark("设备执行操作成功");
+                            lctRemoteControl.setReceiveTime(new Date());
+                            lctRemoteControlRepository.save(lctRemoteControl);
+                            _logger.info("更新远程控制状态. sequenceId>"+ lctRemoteControl.getSequenceId());
                         }else{
-                            _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+remoteControl.getSequenceId());
+                            _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+ lctRemoteControl.getSequenceId());
                         }
                     }
                     break;
@@ -139,28 +139,28 @@ public class MsgHandler {
                 case 103://获取上报
                     //状态信息上报
                     imei=bean.getBody().getImei();
-                    DeviceStatusData deviceStatusData=new DeviceStatusData();
-                    deviceStatusData.setSequenceId(String.valueOf(bean.getHead().getId()));
-                    deviceStatusData.setImei(imei);
-                    deviceStatusData.setType((short) 1);
-                    deviceStatusData.setLatitude(bean.getBody().getLatitude());
-                    deviceStatusData.setLongitude(bean.getBody().getLongitude());
-                    deviceStatusData.setReceiveTime(new Date());
-                    deviceStatusDataRepository.save(deviceStatusData);
+                    LctStatusData lctStatusData =new LctStatusData();
+                    lctStatusData.setSequenceId(String.valueOf(bean.getHead().getId()));
+                    lctStatusData.setImei(imei);
+                    lctStatusData.setType((short) 1);
+                    lctStatusData.setLatitude(bean.getBody().getLatitude());
+                    lctStatusData.setLongitude(bean.getBody().getLongitude());
+                    lctStatusData.setReceiveTime(new Date());
+                    lctStatusDataRepository.save(lctStatusData);
                     if(code==102) {
                         replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
                     }else{
                         //获取，更新记录
                         //更新控制记录
-                        RemoteControl remoteControl=remoteControlRepository.findBySequenceId(String.valueOf(bean.getHead().getId()));
-                        if(remoteControl!=null){
-                            remoteControl.setStatus((short)1);
-                            remoteControl.setRemark("设备执行操作成功");
-                            remoteControl.setReceiveTime(new Date());
-                            remoteControlRepository.save(remoteControl);
-                            _logger.info("更新远程控制状态. sequenceId>"+remoteControl.getSequenceId());
+                        LctRemoteControl lctRemoteControl = lctRemoteControlRepository.findBySequenceId(String.valueOf(bean.getHead().getId()));
+                        if(lctRemoteControl !=null){
+                            lctRemoteControl.setStatus((short)1);
+                            lctRemoteControl.setRemark("设备执行操作成功");
+                            lctRemoteControl.setReceiveTime(new Date());
+                            lctRemoteControlRepository.save(lctRemoteControl);
+                            _logger.info("更新远程控制状态. sequenceId>"+ lctRemoteControl.getSequenceId());
                         }else{
-                            _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+remoteControl.getSequenceId());
+                            _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+ lctRemoteControl.getSequenceId());
                         }
                     }
                     break;
@@ -171,12 +171,12 @@ public class MsgHandler {
                     if(result!=null){
                         if(result.equals("OK")){
                             //更新控制记录
-                            RemoteControl remoteControl=remoteControlRepository.findBySequenceId(sequenceId);
-                            if(remoteControl!=null){
-                                remoteControl.setStatus((short)1);
-                                remoteControl.setRemark("设备执行操作成功");
-                                remoteControl.setReceiveTime(new Date());
-                                remoteControlRepository.save(remoteControl);
+                            LctRemoteControl lctRemoteControl = lctRemoteControlRepository.findBySequenceId(sequenceId);
+                            if(lctRemoteControl !=null){
+                                lctRemoteControl.setStatus((short)1);
+                                lctRemoteControl.setRemark("设备执行操作成功");
+                                lctRemoteControl.setReceiveTime(new Date());
+                                lctRemoteControlRepository.save(lctRemoteControl);
                                 _logger.info("更新远程控制状态. sequenceId>"+sequenceId+",result>"+result);
                             }else{
                                 _logger.info("没有在数据库找到控制记录，无法更新状态. sequenceId>"+sequenceId);
@@ -188,21 +188,21 @@ public class MsgHandler {
                 case 107://碰撞上报
                 case 108://移动上报
                     imei=bean.getBody().getImei();
-                    deviceStatusData=new DeviceStatusData();
-                    deviceStatusData.setSequenceId(String.valueOf(bean.getHead().getId()));
-                    deviceStatusData.setImei(imei);
+                    lctStatusData =new LctStatusData();
+                    lctStatusData.setSequenceId(String.valueOf(bean.getHead().getId()));
+                    lctStatusData.setImei(imei);
                     if(code==107) {
-                        deviceStatusData.setType((short) 2);
-                        deviceStatusData.setActionTime(dataTool.parseStrToDate(bean.getBody().getCollisionTime()));
+                        lctStatusData.setType((short) 2);
+                        lctStatusData.setActionTime(dataTool.parseStrToDate(bean.getBody().getCollisionTime()));
                     }else{
-                        deviceStatusData.setType((short) 3);
-                        deviceStatusData.setActionTime(dataTool.parseStrToDate(bean.getBody().getMoveTime()));
+                        lctStatusData.setType((short) 3);
+                        lctStatusData.setActionTime(dataTool.parseStrToDate(bean.getBody().getMoveTime()));
                     }
 
-                    deviceStatusData.setLatitude(bean.getBody().getLatitude());
-                    deviceStatusData.setLongitude(bean.getBody().getLongitude());
-                    deviceStatusData.setReceiveTime(new Date());
-                    deviceStatusDataRepository.save(deviceStatusData);
+                    lctStatusData.setLatitude(bean.getBody().getLatitude());
+                    lctStatusData.setLongitude(bean.getBody().getLongitude());
+                    lctStatusData.setReceiveTime(new Date());
+                    lctStatusDataRepository.save(lctStatusData);
                     replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", null);
                     break;
                 case 109://休眠请求

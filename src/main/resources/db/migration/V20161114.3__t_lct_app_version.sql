@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS t_app_version(
+CREATE TABLE IF NOT EXISTS t_lct_app_version(
     id bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     app_id varchar(20)  NOT NULL COMMENT '应用id',
     version varchar(20)  NOT NULL COMMENT '版本',

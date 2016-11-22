@@ -8,8 +8,8 @@ import java.util.Date;
  */
 
 @Entity
-@Table(name = "t_device")
-public class Device {
+@Table(name = "t_lct")
+public class Lct {
 
     private Long id;
     private String model;

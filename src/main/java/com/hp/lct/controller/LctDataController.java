@@ -1,8 +1,8 @@
 package com.hp.lct.controller;
 
-import com.hp.lct.service.DeviceDataService;
+import com.hp.lct.service.LctDataService;
 import com.hp.lct.entity.ObjectResult;
-import com.hp.lct.entity.RemoteControlBody;
+import com.hp.lct.entity.LctRemoteControlBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,23 +19,23 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-public class DeviceDataController {
+public class LctDataController {
 
     @Autowired
-    private DeviceDataService deviceDataService;
+    private LctDataService lctDataService;
 
     /**
      * 下发控制指令
      * @param model
      * @param imei
-     * @param remoteControlBody
+     * @param lctRemoteControlBody
      * @param request
      * @return
      */
     @RequestMapping(value = "/service/model/{model}/device/{imei}/remoteControl",method = RequestMethod.POST)
-    public Object remoteControl(@PathVariable("model") String model,@PathVariable("imei") String imei,@RequestBody RemoteControlBody remoteControlBody,HttpServletRequest request){
+    public Object remoteControl(@PathVariable("model") String model,@PathVariable("imei") String imei,@RequestBody LctRemoteControlBody lctRemoteControlBody,HttpServletRequest request){
         RequestContext requestContext = new RequestContext(request);
-        Object result=deviceDataService.handleRemoteControl(remoteControlBody);
+        Object result= lctDataService.handleRemoteControl(lctRemoteControlBody);
         return result;
     }
 
@@ -47,7 +47,7 @@ public class DeviceDataController {
     @RequestMapping(value = "/service/device/online",method = RequestMethod.GET)
     public ObjectResult getOnlineDevice(HttpServletRequest request){
         RequestContext requestContext = new RequestContext(request);
-        ObjectResult objectResult=new ObjectResult(0,deviceDataService.getOnlineDevices());
+        ObjectResult objectResult=new ObjectResult(0, lctDataService.getOnlineDevices());
         return objectResult;
     }
 
@@ -66,7 +66,7 @@ public class DeviceDataController {
     public ObjectResult uploadVideo(@PathVariable("model") String model,@PathVariable("imei") String imei,@PathVariable("filename") String filename,   @RequestParam(value="video")MultipartFile video,HttpServletRequest request,HttpServletResponse response){
         RequestContext requestContext = new RequestContext(request);
         String basePath=request.getServletContext().getRealPath("");
-        boolean result=deviceDataService.handUploadFile(imei, filename, video, basePath);
+        boolean result= lctDataService.handUploadFile(imei, filename, video, basePath);
        ObjectResult objectResult=new ObjectResult(0,"上传成功");
        if(!result){
            objectResult=new ObjectResult(1,"上传失败");
@@ -87,7 +87,7 @@ public class DeviceDataController {
     public ObjectResult listVideo(@PathVariable("model") String model,@PathVariable("imei") String imei,HttpServletRequest request,HttpServletResponse response){
         RequestContext requestContext = new RequestContext(request);
         String basePath=request.getServletContext().getRealPath("");
-        List<String> result=deviceDataService.listFile(imei, ".MP4");
+        List<String> result= lctDataService.listFile(imei, ".MP4");
         ObjectResult objectResult=new ObjectResult(0,result);
         return objectResult;
     }
@@ -104,7 +104,7 @@ public class DeviceDataController {
     public ObjectResult downVideo(@PathVariable("model") String model,@PathVariable("imei") String imei,@PathVariable("fileName") String fileName,HttpServletRequest request,HttpServletResponse response){
         RequestContext requestContext = new RequestContext(request);
         try{
-            File file=deviceDataService.downFile(imei,fileName);
+            File file= lctDataService.downFile(imei,fileName);
             if(file==null){
                 ObjectResult objectResult=new ObjectResult(1,"文件不存在");
                 return objectResult;
@@ -147,7 +147,7 @@ public class DeviceDataController {
     public ObjectResult uploadPhoto(@PathVariable("model") String model,@PathVariable("imei") String imei,@PathVariable("filename") String filename,   @RequestParam(value="video")MultipartFile photo,HttpServletRequest request,HttpServletResponse response){
         RequestContext requestContext = new RequestContext(request);
         String basePath=request.getServletContext().getRealPath("");
-        boolean result=deviceDataService.handUploadFile(imei, filename, photo, basePath);
+        boolean result= lctDataService.handUploadFile(imei, filename, photo, basePath);
         ObjectResult objectResult=new ObjectResult(0,"上传成功");
         if(!result){
             objectResult=new ObjectResult(1,"上传失败");
@@ -168,7 +168,7 @@ public class DeviceDataController {
     public ObjectResult listPhoto(@PathVariable("model") String model,@PathVariable("imei") String imei,HttpServletRequest request,HttpServletResponse response){
         RequestContext requestContext = new RequestContext(request);
         String basePath=request.getServletContext().getRealPath("");
-        List<String> result=deviceDataService.listFile(imei, ".JPG");
+        List<String> result= lctDataService.listFile(imei, ".JPG");
         ObjectResult objectResult=new ObjectResult(0,result);
         return objectResult;
     }
@@ -186,7 +186,7 @@ public class DeviceDataController {
     public ObjectResult downPhoto(@PathVariable("model") String model,@PathVariable("imei") String imei,@PathVariable("fileName") String fileName,HttpServletRequest request,HttpServletResponse response){
         RequestContext requestContext = new RequestContext(request);
         try{
-            File file=deviceDataService.downFile(imei,fileName);
+            File file= lctDataService.downFile(imei,fileName);
             if(file==null){
                 ObjectResult objectResult=new ObjectResult(1,"文件不存在");
                 return objectResult;
@@ -219,14 +219,14 @@ public class DeviceDataController {
      * 设备归属关系 绑定解绑
      * @param model
      * @param imei
-     * @param remoteControlBody
+     * @param lctRemoteControlBody
      * @param request
      * @return
      */
     @RequestMapping(value = "/service/{model}/relation/{imei}",method = RequestMethod.POST)
-    public Object relation(@PathVariable("model") String model,@PathVariable("imei") String imei,@RequestBody RemoteControlBody remoteControlBody,HttpServletRequest request){
+    public Object relation(@PathVariable("model") String model,@PathVariable("imei") String imei,@RequestBody LctRemoteControlBody lctRemoteControlBody,HttpServletRequest request){
         RequestContext requestContext = new RequestContext(request);
-        Object result=deviceDataService.handleRemoteControl(remoteControlBody);
+        Object result= lctDataService.handleRemoteControl(lctRemoteControlBody);
         return result;
     }
 
@@ -234,14 +234,14 @@ public class DeviceDataController {
      * 获取被接人位置信息，并上报服务器
      * @param model
      * @param uid
-     * @param remoteControlBody
+     * @param lctRemoteControlBody
      * @param request
      * @return
      */
     @RequestMapping(value = "/service/{model}/location/{uid}",method = RequestMethod.POST)
-    public Object location(@PathVariable("model") String model,@PathVariable("uid") String uid,@RequestBody RemoteControlBody remoteControlBody,HttpServletRequest request){
+    public Object location(@PathVariable("model") String model,@PathVariable("uid") String uid,@RequestBody LctRemoteControlBody lctRemoteControlBody,HttpServletRequest request){
         RequestContext requestContext = new RequestContext(request);
-        Object result=deviceDataService.handleRemoteControl(remoteControlBody);
+        Object result= lctDataService.handleRemoteControl(lctRemoteControlBody);
         return result;
     }
 
@@ -249,14 +249,14 @@ public class DeviceDataController {
      * 监控时段设置
      * @param model
      * @param uid
-     * @param remoteControlBody
+     * @param lctRemoteControlBody
      * @param request
      * @return
      */
     @RequestMapping(value = "/service/{model}/config/{uid}",method = RequestMethod.POST)
-    public Object config(@PathVariable("model") String model,@PathVariable("uid") String uid,@RequestBody RemoteControlBody remoteControlBody,HttpServletRequest request){
+    public Object config(@PathVariable("model") String model,@PathVariable("uid") String uid,@RequestBody LctRemoteControlBody lctRemoteControlBody,HttpServletRequest request){
         RequestContext requestContext = new RequestContext(request);
-        Object result=deviceDataService.handleRemoteControl(remoteControlBody);
+        Object result= lctDataService.handleRemoteControl(lctRemoteControlBody);
         return result;
     }
     //其他辅助功能***

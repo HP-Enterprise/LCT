@@ -2,9 +2,9 @@ package com.hp.lct.service;
 
 import com.alibaba.fastjson.JSON;
 import com.hp.lct.entity.*;
-import com.hp.lct.repository.DeviceRepository;
-import com.hp.lct.repository.DeviceStatusDataRepository;
-import com.hp.lct.repository.RemoteControlRepository;
+import com.hp.lct.repository.LctRepository;
+import com.hp.lct.repository.LctStatusDataRepository;
+import com.hp.lct.repository.LctRemoteControlRepository;
 import com.hp.lct.utils.DataTool;
 import com.hp.lct.utils.RedisTool;
 import org.slf4j.Logger;
@@ -25,44 +25,44 @@ import java.util.Set;
  * Created by jackl on 2016/11/15.
  */
 @Component
-public class DeviceDataService {
+public class LctDataService {
 
     @Autowired
     private RedisTool redisTool;
     @Autowired
     private DataTool dataTool;
     @Autowired
-    private RemoteControlRepository remoteControlRepository;
+    private LctRemoteControlRepository lctRemoteControlRepository;
     @Autowired
-    private DeviceRepository deviceRepository;
+    private LctRepository lctRepository;
     @Autowired
-    private DeviceStatusDataRepository deviceStatusDataRepository;
+    private LctStatusDataRepository lctStatusDataRepository;
     @Value("${upload.path}")
     private  String uploadPath;
 
-    private Logger _logger = LoggerFactory.getLogger(DeviceDataService.class);
+    private Logger _logger = LoggerFactory.getLogger(LctDataService.class);
 
-    public ObjectResult handleRemoteControl(RemoteControlBody remoteControlBody){
+    public ObjectResult handleRemoteControl(LctRemoteControlBody lctRemoteControlBody){
         ObjectResult re=null;
-        if(remoteControlBody!=null) {
-            String commandJson= JSON.toJSONString(remoteControlBody);
+        if(lctRemoteControlBody !=null) {
+            String commandJson= JSON.toJSONString(lctRemoteControlBody);
             _logger.info("开始处理控制指令:"+commandJson);
-            if (!isDeviceOnline(remoteControlBody.getImei())) {
+            if (!isDeviceOnline(lctRemoteControlBody.getImei())) {
                 //todo 保存到数据库
-                RemoteControl remoteControl=new RemoteControl();
-                remoteControl.setImei(remoteControlBody.getImei());
-                remoteControl.setSequenceId(dataTool.getSequenceId());
-                remoteControl.setSendingTime(new Date());
-                remoteControl.setCommand(dataTool.getCommandDesc(remoteControlBody.getCommand(),remoteControlBody.getOperate()));
-                remoteControl.setParams("");
-                remoteControl.setStatus((short)0);
-                remoteControl.setRemark("设备不在线,无法继续。");
-                remoteControlRepository.save(remoteControl);
+                LctRemoteControl lctRemoteControl =new LctRemoteControl();
+                lctRemoteControl.setImei(lctRemoteControlBody.getImei());
+                lctRemoteControl.setSequenceId(dataTool.getSequenceId());
+                lctRemoteControl.setSendingTime(new Date());
+                lctRemoteControl.setCommand(dataTool.getCommandDesc(lctRemoteControlBody.getCommand(), lctRemoteControlBody.getOperate()));
+                lctRemoteControl.setParams("");
+                lctRemoteControl.setStatus((short)0);
+                lctRemoteControl.setRemark("设备不在线,无法继续。");
+                lctRemoteControlRepository.save(lctRemoteControl);
 
-                _logger.info("设备"+remoteControlBody.getImei()+"不在线,无法继续。");
+                _logger.info("设备"+ lctRemoteControlBody.getImei()+"不在线,无法继续。");
                 re=new ObjectResult(1,"设备不在线");
             } else {
-                sendCommand(remoteControlBody);
+                sendCommand(lctRemoteControlBody);
                 re=new ObjectResult(0,"命令已经下发");
             }
         }else{
@@ -79,12 +79,12 @@ public class DeviceDataService {
         return exist;
     }
 
-    public void sendCommand(RemoteControlBody remoteControlBody){
-        String command=remoteControlBody.getCommand();
-        String operate=remoteControlBody.getOperate();
-        String imei=remoteControlBody.getImei();
-        String dest=remoteControlBody.getDest();
-        int time=remoteControlBody.getTime();
+    public void sendCommand(LctRemoteControlBody lctRemoteControlBody){
+        String command= lctRemoteControlBody.getCommand();
+        String operate= lctRemoteControlBody.getOperate();
+        String imei= lctRemoteControlBody.getImei();
+        String dest= lctRemoteControlBody.getDest();
+        int time= lctRemoteControlBody.getTime();
         String sequenceId=dataTool.getSequenceId();
         String commandKey=dataTool.outCmdPreStr+imei+":"+command+":"+sequenceId;
         String  commandValue="";
@@ -96,27 +96,27 @@ public class DeviceDataService {
                 commandValue=operate+","+time;//15
             }
             //todo 保存到数据库
-            RemoteControl remoteControl=new RemoteControl();
-            remoteControl.setImei(imei);
-            remoteControl.setSequenceId(String.valueOf(sequenceId));
-            remoteControl.setSendingTime(new Date());
-            remoteControl.setCommand(dataTool.getCommandDesc(remoteControlBody.getCommand(),remoteControlBody.getOperate()));
-            remoteControl.setParams(commandValue);
-            remoteControl.setStatus((short)0);
-            remoteControl.setRemark("命令已发出");
-            remoteControlRepository.save(remoteControl);
+            LctRemoteControl lctRemoteControl =new LctRemoteControl();
+            lctRemoteControl.setImei(imei);
+            lctRemoteControl.setSequenceId(String.valueOf(sequenceId));
+            lctRemoteControl.setSendingTime(new Date());
+            lctRemoteControl.setCommand(dataTool.getCommandDesc(lctRemoteControlBody.getCommand(), lctRemoteControlBody.getOperate()));
+            lctRemoteControl.setParams(commandValue);
+            lctRemoteControl.setStatus((short)0);
+            lctRemoteControl.setRemark("命令已发出");
+            lctRemoteControlRepository.save(lctRemoteControl);
 
             redisTool.saveSetString(commandKey, commandValue,-1);
         }else if(command.equals("101")||command.equals("103")){
-            RemoteControl remoteControl=new RemoteControl();
-            remoteControl.setImei(imei);
-            remoteControl.setSequenceId(String.valueOf(sequenceId));
-            remoteControl.setSendingTime(new Date());
-            remoteControl.setCommand(dataTool.getCommandDesc(remoteControlBody.getCommand(),remoteControlBody.getOperate()));
-            remoteControl.setParams(commandValue);
-            remoteControl.setStatus((short)0);
-            remoteControl.setRemark("命令已发出");
-            remoteControlRepository.save(remoteControl);
+            LctRemoteControl lctRemoteControl =new LctRemoteControl();
+            lctRemoteControl.setImei(imei);
+            lctRemoteControl.setSequenceId(String.valueOf(sequenceId));
+            lctRemoteControl.setSendingTime(new Date());
+            lctRemoteControl.setCommand(dataTool.getCommandDesc(lctRemoteControlBody.getCommand(), lctRemoteControlBody.getOperate()));
+            lctRemoteControl.setParams(commandValue);
+            lctRemoteControl.setStatus((short)0);
+            lctRemoteControl.setRemark("命令已发出");
+            lctRemoteControlRepository.save(lctRemoteControl);
             redisTool.saveSetString(commandKey,commandValue,-1);
         }else{
             _logger.info(command+"命令暂不支持,支持（101,103,106）");
@@ -129,11 +129,11 @@ public class DeviceDataService {
      * 获取在线的设备
      * @return
      */
-    public List<DeviceStatusData> getOnlineDevices(){
-        List<DeviceStatusData> devices=new ArrayList<>();
+    public List<LctStatusData> getOnlineDevices(){
+        List<LctStatusData> devices=new ArrayList<>();
         Set<String> onlineImeis=redisTool.listHashKeys(dataTool.onlineDeviceHash);
         for (String imei:onlineImeis){
-            DeviceStatusData device=deviceStatusDataRepository.findTopByImeiOrderByReceiveTimeDesc(imei);
+            LctStatusData device= lctStatusDataRepository.findTopByImeiOrderByReceiveTimeDesc(imei);
             if(device!=null){
                 devices.add(device);
             }

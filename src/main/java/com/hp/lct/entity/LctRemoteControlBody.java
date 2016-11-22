@@ -3,7 +3,7 @@ package com.hp.lct.entity;
 /**
  * Created by jackl on 2016/11/15.
  */
-public class RemoteControlBody {
+public class LctRemoteControlBody {
     private String imei;
     private String operate;
     private String dest;

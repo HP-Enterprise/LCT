@@ -8,8 +8,8 @@ import java.util.Date;
  */
 
 @Entity
-@Table(name = "t_remote_control")
-public class RemoteControl {
+@Table(name = "t_lct_remote_control")
+public class LctRemoteControl {
 
     private Long id;
     private int uid;

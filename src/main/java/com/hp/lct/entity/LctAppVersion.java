@@ -8,8 +8,8 @@ import java.util.Date;
  */
 
 @Entity
-@Table(name = "t_app_version")
-public class AppVersion {
+@Table(name = "t_lct_app_version")
+public class LctAppVersion {
     private Long id;
     private String appId;
     private String version;

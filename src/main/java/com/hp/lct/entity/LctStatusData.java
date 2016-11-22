@@ -8,8 +8,8 @@ import java.util.Date;
  */
 
 @Entity
-@Table(name = "t_device_status_data")
-public class DeviceStatusData {
+@Table(name = "t_lct_status_data")
+public class LctStatusData {
 
     private Long id;
     private String sequenceId;

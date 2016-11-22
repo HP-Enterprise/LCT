@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS t_remote_control(
+CREATE TABLE IF NOT EXISTS t_lct_remote_control(
 id bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
 uid int(11) COMMENT 'uid',
 sequence_id varchar(20)  NOT NULL COMMENT '序号',
