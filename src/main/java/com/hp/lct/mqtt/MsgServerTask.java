@@ -1,9 +1,9 @@
 package com.hp.lct.mqtt;
 
 import com.alibaba.fastjson.JSON;
-import com.hp.lct.entity.Body;
-import com.hp.lct.entity.CommandParam;
-import com.hp.lct.entity.Head;
+import com.hp.lct.entity.LctMsgBody;
+import com.hp.lct.entity.LctCommandParam;
+import com.hp.lct.entity.LctMsgHead;
 import com.hp.lct.entity.MsgBean;
 import com.hp.lct.service.MsgHandler;
 import com.hp.lct.utils.DataTool;
@@ -12,12 +12,8 @@ import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -136,7 +132,7 @@ public class MsgServerTask implements Runnable{
         String command=ss[3];
         String sequenceId=ss[4];
 
-        Body body=null;
+        LctMsgBody body=null;
         String replayMsg=null;
         if(command.equals("101")){
             replayMsg=buildResp(1,Long.parseLong(sequenceId),subscribeTopic,101,1,"",null);
@@ -144,9 +140,9 @@ public class MsgServerTask implements Runnable{
             replayMsg=buildResp(1,Long.parseLong(sequenceId),subscribeTopic,103,1,"",null);
         }else  if(command.equals("106")){
             String[] vals=msg.split(",");
-            body=new Body();
+            body=new LctMsgBody();
             body.setOperate(vals[0]);
-            CommandParam commandParam=new CommandParam();
+            LctCommandParam commandParam=new LctCommandParam();
             if(vals[0].equals("VIDEO")){
                 commandParam.setTime(vals[1]);
             }else  if(vals[0].equals("NAVIGATE")){
@@ -161,9 +157,9 @@ public class MsgServerTask implements Runnable{
         }
     }
 
-    public String buildResp(int version,long id, String from,int code, int type, String msg,Body body){
+    public String buildResp(int version,long id, String from,int code, int type, String msg,LctMsgBody body){
         String replayStr=null;
-        Head head=new Head(version,id,from,code,type,msg);
+        LctMsgHead head=new LctMsgHead(version,id,from,code,type,msg);
 
         MsgBean msgBean=new MsgBean(head,body);
         try {

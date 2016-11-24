@@ -82,17 +82,17 @@ public class MsgHandler {
 
                 case 6:
                     //设备查询APP升级信息
-                    List<App> reqApps=bean.getBody().getApps();
-                    List<App> respApps=new ArrayList<App>();
+                    List<LctApp> reqApps=bean.getBody().getApps();
+                    List<LctApp> respApps=new ArrayList<LctApp>();
                     for (int i = 0; i <reqApps.size(); i++) {
-                        App app=reqApps.get(i);
+                        LctApp app=reqApps.get(i);
                         LctAppVersion lctAppVersion = lctAppVersionRepository.findTopByAppIdAndVersionGreaterThanOrderByPublishTimeDesc(app.getAppId(), app.getVersion());
                         if(lctAppVersion !=null) {
-                            App _app = new App(lctAppVersion.getAppId(), lctAppVersion.getVersion(), lctAppVersion.getUrl(), lctAppVersion.getAppSize(), lctAppVersion.getMd5(), lctAppVersion.getAppDesc());
+                            LctApp _app = new LctApp(lctAppVersion.getAppId(), lctAppVersion.getVersion(), lctAppVersion.getUrl(), lctAppVersion.getAppSize(), lctAppVersion.getMd5(), lctAppVersion.getAppDesc());
                             respApps.add(_app);
                         }
                     }
-                    Body body=new Body();
+                    LctMsgBody body=new LctMsgBody();
                     body.setApps(respApps);
                     replayMsg = buildResp(version, id, subscribeTopic, code, 2, "OK", body);
                     break;
@@ -235,9 +235,9 @@ public class MsgHandler {
         }
     }
 
-    public String buildResp(int version,long id, String from,int code, int type, String msg,Body body){
+    public String buildResp(int version,long id, String from,int code, int type, String msg,LctMsgBody body){
         String replayStr=null;
-        Head head=new Head(version,id,from,code,type,msg);
+        LctMsgHead head=new LctMsgHead(version,id,from,code,type,msg);
 
         MsgBean msgBean=new MsgBean(head,body);
         try {

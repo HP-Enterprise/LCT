@@ -5,31 +5,31 @@ package com.hp.lct.entity;
  */
 public class MsgBean {
 
-    private Body body;
-    private Head head;
+    private LctMsgBody body;
+    private LctMsgHead head;
 
     public MsgBean(){
 
     }
 
-    public MsgBean(Head head,Body body) {
+    public MsgBean(LctMsgHead head,LctMsgBody body) {
         this.body = body;
         this.head = head;
     }
 
-    public Body getBody() {
+    public LctMsgBody getBody() {
         return body;
     }
 
-    public void setBody(Body body) {
+    public void setBody(LctMsgBody body) {
         this.body = body;
     }
 
-    public Head getHead() {
+    public LctMsgHead getHead() {
         return head;
     }
 
-    public void setHead(Head head) {
+    public void setHead(LctMsgHead head) {
         this.head = head;
     }
 }

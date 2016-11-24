@@ -3,7 +3,7 @@ package com.hp.lct.entity;
 /**
  * Created by jackl on 2016/11/14.
  */
-public class Head {
+public class LctMsgHead {
 
     private int version;
     private long id;
@@ -12,11 +12,11 @@ public class Head {
     private int type;
     private String msg;
 
-    public Head(){
+    public LctMsgHead(){
 
     }
 
-    public Head(int version, long id, String from, int code, int type, String msg) {
+    public LctMsgHead(int version, long id, String from, int code, int type, String msg) {
         this.version = version;
         this.id = id;
         this.from = from;
